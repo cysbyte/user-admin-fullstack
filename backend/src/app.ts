@@ -6,14 +6,31 @@ import morgan from 'morgan';
 import createHttpError, { isHttpError } from 'http-errors';
 import session from 'express-session';
 import env from './util/validateEnv';
-import MongoStore from 'connect-mongo';
+import cors from 'cors';
+import sequelize from './config/database';
+import cookieParser from 'cookie-parser';
 
+const SessionStore = require('express-session-sequelize')(session.Store);
 const app = express();
 
 app.use(morgan('dev'));
 
 app.use(express.json());
 
+app.use(
+    cors({
+      origin: "http://localhost:3000",
+      credentials: true,
+      allowedHeaders: [
+        "set-cookie",
+        "Content-Type",
+        "Access-Control-Allow-Origin",
+        "Access-Control-Allow-Credentials",
+      ],
+    })
+);
+
+app.use(cookieParser());
 app.use(session({
     secret: env.SESSION_SECRET,
     resave: false,
@@ -22,11 +39,11 @@ app.use(session({
         maxAge: 60 * 60 * 1000,
     },
     rolling: true,
-    store: MongoStore.create({
-        mongoUrl: env.MONGO_CONNECTION_STRING
+    store: new SessionStore({
+        db: sequelize,
     })
 
-}))
+}));
 
 app.use('/api/auth', authRoutes);
 
@@ -49,5 +66,10 @@ app.use((error: unknown, req: Request, res: Response, next: NextFunction) => {
     //     res.status(500).json({ error: errorMessage });
     // }
 });
+
+(async () => {
+    await sequelize.sync();
+
+})();
 
 export default app;

@@ -1,11 +1,15 @@
-import { InferSchemaType, Schema, model } from "mongoose";
+import Sequelize from 'sequelize';
 
-const userSchema = new Schema({
-    username: {type: String, required: true, unique: true},
-    email: {type: String, required: true, select: false, unique: true},
-    password: {type: String, required: true, select: false},
+import sequelize from '../config/database';
+
+export const User = sequelize.define('user', {
+    id: {
+        type: Sequelize.INTEGER,
+        autoIncrement: true,
+        allowNull: false,
+        primaryKey: true
+    },
+    name: Sequelize.STRING,
+    email: Sequelize.STRING,
+    password: Sequelize.STRING
 });
-
-type User = InferSchemaType<typeof userSchema>;
-
-export default model<User>('User', userSchema);

@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 import createHttpError from "http-errors";
-import UserModel from '../models/user';
+import { User } from '../models/user';
 import bcrypt from 'bcryptjs'
 import { assertIsDefined } from "../util/assertIsDefined";
 
@@ -12,7 +12,7 @@ export const getAuthenticatedUser: RequestHandler = async (req, res, next) => {
         // }
         assertIsDefined(authenticatedUserId);
 
-        const user = await UserModel.findById(authenticatedUserId).select('+email').exec();
+        const user = await User.findOne({ where: { id: authenticatedUserId } }) as typeof User | null;
         
         if (!user) {
             throw createHttpError(401, 'Invalid credentials');
@@ -42,27 +42,28 @@ export const signUp: RequestHandler<unknown, unknown, SignUpBody, unknown> =asyn
             throw createHttpError(400, 'Parameters missing');
         }
 
-        const existingUsername = await UserModel.findOne({ username: username }).exec();
+        const existingUsername = await User.findOne({ where: { username: username } }) as typeof User | null;
 
         if (existingUsername) {
             throw createHttpError(409, 'Username already taken. Please choose a different one or log in instead.');
         }
 
-        const existingEmail = await UserModel.findOne({ email: email }).exec();
+        const existingEmail = await User.findOne({ where: { username: username } }) as typeof User | null;
 
         if (existingEmail) {
             throw createHttpError(409, 'A user with this email address already exists. Please log in instead.');
         }
 
-        const passwordHashed = await bcrypt.hash(passwordRaw, 10);
+        const hashedPassword = await bcrypt.hash(passwordRaw, 10);
 
-        const newUser = await UserModel.create({
-            username: username,
+        const newUser = new User({
             email: email,
-            password: passwordHashed,
+            name: name,
+            password: hashedPassword
         });
+        const result = await newUser.save();
 
-        req.session.userId = newUser._id;
+        req.session.userId = newUser.id;
 
         res.status(201).json(newUser);
 
@@ -90,10 +91,7 @@ export const login: RequestHandler<unknown, unknown, LoginBody, unknown> = async
             throw createHttpError(400, 'Parameters missing');
         }
 
-        const user = await UserModel
-            .findOne({ email: email })
-            .select('+password +username +email')
-            .exec();
+        const user = await await User.findOne({ where: { email: email } }) as typeof User | null;
         
         if (!user) {
             throw createHttpError(401, 'Invalid credentials');
@@ -105,7 +103,7 @@ export const login: RequestHandler<unknown, unknown, LoginBody, unknown> = async
             throw createHttpError(401, 'Invalid credentials');
         }
 
-        req.session.userId = user._id;
+        req.session.userId = user.id;
         const userReturn: User = { email: user.email, username: user.username };
         res.status(201).json(userReturn);
     } catch (error) {
