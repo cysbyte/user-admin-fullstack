@@ -16,7 +16,7 @@ const Register = () => {
     e.preventDefault();
     const usernameInput = username.current?.value;
     const emailInput = email.current?.value;
-    const passwordInput = email.current?.value;
+    const passwordInput = password.current?.value;
 
     try {
       const credentials: AuthApi.SignUpCredentials = {

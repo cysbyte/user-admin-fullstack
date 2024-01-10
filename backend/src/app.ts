@@ -9,6 +9,8 @@ import env from './util/validateEnv';
 import cors from 'cors';
 import sequelize from './config/database';
 import cookieParser from 'cookie-parser';
+import { User } from './models/user';
+import { Product } from './models/product';
 
 const SessionStore = require('express-session-sequelize')(session.Store);
 const app = express();
@@ -67,9 +69,12 @@ app.use((error: unknown, req: Request, res: Response, next: NextFunction) => {
     // }
 });
 
-(async () => {
-    await sequelize.sync();
+Product.belongsTo(User, { constraints: true, onDelete: 'CASCADE' });
+User.hasMany(Product);
 
+(async () => {
+    // await sequelize.sync({ false: true });
+    await sequelize.sync();
 })();
 
 export default app;

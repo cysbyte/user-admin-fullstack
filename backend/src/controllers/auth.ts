@@ -58,7 +58,7 @@ export const signUp: RequestHandler<unknown, unknown, SignUpBody, unknown> =asyn
 
         const newUser = new User({
             email: email,
-            name: name,
+            username: username,
             password: hashedPassword
         });
         const result = await newUser.save();
